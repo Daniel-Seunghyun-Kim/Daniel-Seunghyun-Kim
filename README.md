@@ -1,10 +1,157 @@
-- 👋 Hi, I’m @Daniel-Seunghyun-Kim
-- 👀 I’m interested in adjusting the etching process of semiconductor by using coding
-- 🌱 I’m currently learning the etching process of semiconductor by using copper films
-- 💞️ I’m looking to collaborate on ...
-- 📫 How to reach me ...
+# 열전도 방정식 시뮬레이션
 
-<!---
-Daniel-Seunghyun-Kim/Daniel-Seunghyun-Kim is a ✨ special ✨ repository because its `README.md` (this file) appears on your GitHub profile.
-You can click the Preview link to take a look at your changes.
---->
+1D 및 2D 단순 열전도 방정식의 해석해와 수치해법을 구현하고, 시간에 따른 온도 프로파일을 애니메이션으로 시각화합니다.
+
+## 방정식
+
+### 1D 열전도 방정식
+```
+∂T/∂t = α * ∂²T/∂x²
+```
+
+### 2D 열전도 방정식
+```
+∂T/∂t = α * (∂²T/∂x² + ∂²T/∂y²)
+```
+
+### 반도체 소자 열전도 방정식 (내부 열원 포함)
+```
+∂T/∂t = α * ∇²T + S
+```
+
+여기서:
+- `T`: 온도 (℃)
+- `t`: 시간 (s)
+- `α`: 열확산계수 (m²/s)
+- `x, y`: 공간 좌표 (m)
+- `S`: 내부 열 생성률 (K/s)
+
+## 설치
+
+필요한 패키지를 설치합니다:
+
+```bash
+pip install -r requirements.txt
+```
+
+## 사용법
+
+### 전체 시뮬레이션 실행
+
+```bash
+python main.py
+```
+
+이 명령은 다음을 생성합니다:
+- 1D 열전도 해석해 애니메이션 (외부→내부 열전도)
+- 1D 열전도 수치해법 애니메이션 (외부→내부 열전도)
+- 2D 열전도 수치해법 애니메이션 (외부→내부 열전도)
+- 1D 반도체 소자 열전도 애니메이션 (내부→외부 열전도)
+- 2D 반도체 소자 열전도 애니메이션 (내부→외부 열전도)
+
+### 개별 실행
+
+#### 1D 열전도 - 해석해
+```bash
+python heat_conduction_1d.py
+```
+
+#### 2D 열전도
+```bash
+python heat_conduction_2d.py
+```
+
+#### 반도체 소자 열전도 (내부 열원)
+```bash
+python heat_conduction_semiconductor.py
+```
+
+## 구현 내용
+
+### 1D 열전도 (`heat_conduction_1d.py`)
+- **해석해**: 푸리에 급수 전개를 사용한 정확한 해
+- **수치해법**: FTCS (Forward Time Central Space) 방법
+- 경계 조건: Dirichlet 경계 조건 (고정 온도)
+
+### 2D 열전도 (`heat_conduction_2d.py`)
+- **수치해법**: FTCS 방법
+- 시각화:
+  - 2D 컬러맵 애니메이션
+  - 3D 표면 플롯 애니메이션
+
+### 반도체 소자 열전도 (`heat_conduction_semiconductor.py`)
+- **시나리오**: 내부에서 열이 생성되고 경계에서 냉각됨
+- **수치해법**: FTCS 방법 (내부 열원 항 포함)
+- **특징**:
+  - 가우시안 분포의 내부 열원
+  - 경계 냉각 조건 (고정 온도)
+  - 반도체 소자의 전력 소비에 의한 발열 시뮬레이션
+- **시각화**:
+  - 1D: 온도 프로파일 + 열원 분포
+  - 2D: 컬러맵 애니메이션 (저온=청색, 고온=적색)
+  - 3D: 표면 플롯 애니메이션
+
+## 파라미터 설정
+
+코드에서 다음 파라미터를 조정할 수 있습니다:
+
+- `L`, `Lx`, `Ly`: 영역 크기 (m)
+- `T0`: 초기 온도 (℃)
+- `T_left`, `T_right`, `T_boundary`: 경계 온도 (℃)
+- `alpha`: 열확산계수 (m²/s)
+- `nx`, `ny`: 공간 격자 수
+- `nt`: 시간 스텝 수
+- `dt`: 시간 간격 (s)
+
+## 안정성 조건
+
+수치해법의 안정성을 위해 다음 조건을 만족해야 합니다:
+
+- **1D FTCS**: `r = α * dt / dx² ≤ 0.5`
+- **2D FTCS**: `rx = α * dt / dx² ≤ 0.25`, `ry = α * dt / dy² ≤ 0.25`
+
+## 출력 파일
+
+애니메이션은 다음 형식으로 저장됩니다:
+- `heat_conduction_1d_analytical.gif` - 1D 해석해 (외부→내부)
+- `heat_conduction_1d_numerical.gif` - 1D 수치해법 (외부→내부)
+- `heat_conduction_2d.gif` - 2D 수치해법 (외부→내부)
+- `heat_conduction_2d_3d.gif` - 2D 3D 표면 (외부→내부)
+- `heat_conduction_semiconductor_1d.gif` - 1D 반도체 소자 (내부→외부)
+- `heat_conduction_semiconductor_2d.gif` - 2D 반도체 소자 (내부→외부)
+- `heat_conduction_semiconductor_2d_3d.gif` - 2D 반도체 소자 3D 표면 (내부→외부)
+
+## 예제
+
+기본 예제는 다음과 같은 조건으로 실행됩니다:
+
+**1D:**
+- 막대 길이: 1.0 m
+- 초기 온도: 0℃
+- 왼쪽 경계: 100℃
+- 오른쪽 경계: 0℃
+- 열확산계수: 0.01 m²/s
+
+**2D:**
+- 영역 크기: 1.0 m × 1.0 m
+- 초기 온도: 0℃
+- 경계 온도: 100℃
+- 열확산계수: 0.01 m²/s
+
+**반도체 소자 (내부 열원):**
+- 영역 크기: 1.0 m (1D) 또는 1.0 m × 1.0 m (2D)
+- 초기 온도: 25℃
+- 냉각 경계 온도: 25℃
+- 열원 위치: 중심부
+- 열원 강도: 500 K/s
+- 열확산계수: 0.01 m²/s
+
+## 시나리오 비교
+
+### 외부→내부 열전도 (기본 시나리오)
+- 경계에서 고온이 유지되고 내부로 열이 전도됨
+- 예: 가열된 막대의 냉각 과정
+
+### 내부→외부 열전도 (반도체 소자 시나리오)
+- 내부에서 열이 생성되고 경계에서 냉각됨
+- 예: 반도체 소자의 전력 소비에 의한 발열 및 방열
