@@ -207,8 +207,8 @@ def main():
         """
     )
     
-    parser.add_argument('source_dir', 
-                       help='정리할 소스 디렉토리 경로')
+    parser.add_argument('source_dir', nargs='?', default='.',
+                       help='정리할 소스 디렉토리 경로 (기본값: 현재 디렉토리)')
     parser.add_argument('-t', '--target-dir',
                        help='정리된 파일을 저장할 타겟 디렉토리 (기본값: 소스 디렉토리)')
     parser.add_argument('--no-date', action='store_true',
