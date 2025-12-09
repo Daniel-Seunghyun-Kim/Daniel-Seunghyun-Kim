@@ -16,7 +16,8 @@ You can click the Preview link to take a look at your changes.
 ## 주요 기능
 
 - 📅 **날짜별 정리**: 파일의 수정 날짜를 기준으로 `YYYY-MM` 형식의 폴더로 자동 분류
-- 📁 **유형별 정리**: 파일 확장자를 기반으로 다음 카테고리로 자동 분류
+- 🔗 **연관 파일 보존**: 같은 폴더에 있던 파일들을 함께 유지하여 프로젝트나 관련 파일들이 분리되지 않도록 보호
+- 📁 **유형별 정리** (선택사항): 파일 확장자를 기반으로 카테고리별 분류 (기본값: 비활성화)
   - 문서 (PDF, Word, Excel, PowerPoint 등)
   - 이미지 (JPG, PNG, GIF 등)
   - 비디오 (MP4, AVI, MKV 등)
@@ -27,6 +28,7 @@ You can click the Preview link to take a look at your changes.
   - 기타
 - 🔄 **중복 파일 처리**: 같은 이름의 파일이 있을 경우 자동으로 번호를 추가
 - 🛡️ **안전 모드**: 시뮬레이션 모드로 실제 이동 전에 미리 확인 가능
+- 📝 **이동 이력 기록**: 모든 파일 이동을 기록하여 필요시 원래 위치로 복구 가능
 
 ## 설치 방법
 
@@ -59,17 +61,24 @@ python file_organizer.py ~/Downloads -t ~/정리된파일
 
 - `--dry-run`: 실제 이동 없이 시뮬레이션만 실행 (안전하게 미리 확인)
 - `--no-date`: 날짜별 정리 비활성화
-- `--no-type`: 유형별 정리 비활성화
+- `--type`: 유형별 정리 활성화 (확장자 기반 분류, 기본값: 비활성화)
+- `--no-preserve`: 원본 폴더 구조 보존 비활성화 (기본값: 보존)
 - `--no-recursive`: 하위 디렉토리 검색 비활성화
 - `-t, --target-dir`: 정리된 파일을 저장할 타겟 디렉토리 지정
 
 ### 사용 예시
 
 ```bash
-# 날짜별로만 정리 (유형별 정리 없음)
-python file_organizer.py ~/Downloads --no-type
+# 기본 모드: 날짜별 정리 + 연관 파일 보존 (권장)
+python file_organizer.py ~/Downloads
 
-# 유형별로만 정리 (날짜별 정리 없음)
+# 날짜별로만 정리 (연관 파일 보존)
+python file_organizer.py ~/Downloads
+
+# 확장자 기반 유형별 정리 활성화
+python file_organizer.py ~/Downloads --type
+
+# 날짜별 정리 없이 원본 구조만 보존
 python file_organizer.py ~/Downloads --no-date
 
 # 현재 디렉토리만 정리 (하위 디렉토리 제외)
@@ -78,7 +87,28 @@ python file_organizer.py . --no-recursive
 
 ## 정리 결과 구조
 
-기본적으로 파일은 다음과 같은 구조로 정리됩니다:
+### 기본 모드 (연관 파일 보존, 권장)
+
+같은 폴더에 있던 파일들이 함께 유지됩니다:
+
+```
+정리된_디렉토리/
+├── 2024-01/
+│   ├── 프로젝트A/
+│   │   ├── report.pdf
+│   │   ├── data.xlsx
+│   │   └── presentation.pptx
+│   └── 프로젝트B/
+│       ├── image.jpg
+│       └── notes.txt
+└── 2024-02/
+    └── 문서/
+        └── file.pdf
+```
+
+### 유형별 정리 모드 (`--type` 옵션)
+
+확장자 기반으로 분류됩니다:
 
 ```
 정리된_디렉토리/
@@ -89,10 +119,8 @@ python file_organizer.py . --no-recursive
 │   └── 2024-02/
 │       └── data.xlsx
 ├── 이미지/
-│   ├── 2024-01/
-│   │   └── photo.jpg
-│   └── 2024-02/
-│       └── screenshot.png
+│   └── 2024-01/
+│       └── photo.jpg
 └── 비디오/
     └── 2024-01/
         └── video.mp4

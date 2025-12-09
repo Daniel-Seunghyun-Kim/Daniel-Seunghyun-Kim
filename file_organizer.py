@@ -36,13 +36,14 @@ class FileOrganizer:
     }
     
     def __init__(self, source_dir, target_dir=None, organize_by_date=True, 
-                 organize_by_type=True, dry_run=False, log_file=None):
+                 organize_by_type=False, preserve_structure=True, dry_run=False, log_file=None):
         """
         Args:
             source_dir: 정리할 소스 디렉토리
             target_dir: 정리된 파일을 저장할 타겟 디렉토리 (None이면 source_dir 내에 정리)
             organize_by_date: 날짜별로 정리할지 여부
-            organize_by_type: 파일 유형별로 정리할지 여부
+            organize_by_type: 파일 유형별로 정리할지 여부 (기본값: False, 연관 파일 보존을 위해)
+            preserve_structure: 원본 폴더 구조를 보존할지 여부 (기본값: True)
             dry_run: 실제 이동 없이 시뮬레이션만 실행
             log_file: 이동 이력을 저장할 로그 파일 경로 (None이면 자동 생성)
         """
@@ -54,6 +55,7 @@ class FileOrganizer:
         
         self.organize_by_date = organize_by_date
         self.organize_by_type = organize_by_type
+        self.preserve_structure = preserve_structure
         self.dry_run = dry_run
         
         if not self.source_dir.exists():
@@ -88,8 +90,38 @@ class FileOrganizer:
         except OSError:
             return '날짜없음'
     
-    def generate_target_path(self, file_path):
-        """파일의 목적지 경로를 생성"""
+    def get_related_files_group(self, file_path, all_files):
+        """연관된 파일들을 찾아 그룹명을 반환 (파일명 기반)"""
+        stem = file_path.stem.lower()
+        
+        # 같은 이름의 다른 확장자 파일들 찾기
+        related_count = 0
+        for other_file in all_files:
+            if other_file.stem.lower() == stem and other_file != file_path:
+                related_count += 1
+        
+        # 연관 파일이 있으면 그룹명 반환
+        if related_count > 0:
+            # 파일명의 공통 부분을 그룹명으로 사용
+            # 숫자나 특수문자 제거하여 깔끔한 그룹명 생성
+            group_name = stem
+            # 너무 긴 이름은 자르기
+            if len(group_name) > 30:
+                group_name = group_name[:30]
+            return group_name
+        
+        return None
+    
+    def get_original_folder_name(self, file_path):
+        """원본 폴더 이름을 반환 (연관 파일 보존용)"""
+        relative_path = file_path.relative_to(self.source_dir)
+        if len(relative_path.parts) > 1:
+            # 원본 폴더 이름 반환
+            return relative_path.parts[0]
+        return None
+    
+    def generate_target_path(self, file_path, all_files=None):
+        """파일의 목적지 경로를 생성 (연관 파일 보존)"""
         relative_path = file_path.relative_to(self.source_dir)
         
         # 이미 정리된 폴더 구조 내에 있으면 건너뛰기
@@ -102,13 +134,27 @@ class FileOrganizer:
         
         target_parts = []
         
-        if self.organize_by_type:
-            category = self.get_file_category(file_path)
-            target_parts.append(category)
-        
+        # 날짜별 정리
         if self.organize_by_date:
             date = self.get_file_date(file_path)
             target_parts.append(date)
+        
+        # 연관 파일 보존 모드
+        if self.preserve_structure:
+            # 원본 폴더 구조 보존
+            original_folder = self.get_original_folder_name(file_path)
+            if original_folder:
+                target_parts.append(original_folder)
+            else:
+                # 같은 폴더에 없으면 파일명 기반 그룹화
+                if all_files:
+                    group_name = self.get_related_files_group(file_path, all_files)
+                    if group_name:
+                        target_parts.append(group_name)
+        elif self.organize_by_type:
+            # 유형별 정리 (기본값은 비활성화)
+            category = self.get_file_category(file_path)
+            target_parts.append(category)
         
         if target_parts:
             target_path = self.target_dir / Path(*target_parts) / file_path.name
@@ -134,12 +180,12 @@ class FileOrganizer:
                 return new_path
             counter += 1
     
-    def organize_file(self, file_path):
+    def organize_file(self, file_path, all_files=None):
         """단일 파일을 정리"""
         if file_path.is_dir():
             return
         
-        target_path = self.generate_target_path(file_path)
+        target_path = self.generate_target_path(file_path, all_files)
         if target_path is None:
             return  # 이미 정리된 파일
         
@@ -181,6 +227,7 @@ class FileOrganizer:
         print(f"타겟 디렉토리: {self.target_dir}")
         print(f"날짜별 정리: {'예' if self.organize_by_date else '아니오'}")
         print(f"유형별 정리: {'예' if self.organize_by_type else '아니오'}")
+        print(f"구조 보존: {'예' if self.preserve_structure else '아니오'}")
         print(f"시뮬레이션 모드: {'예' if self.dry_run else '아니오'}")
         print(f"{'='*60}\n")
         
@@ -223,7 +270,7 @@ class FileOrganizer:
                 print(f"처리 중: {idx}/{total} ({progress:.1f}%)", end='\r')
                 sys.stdout.flush()
             
-            self.organize_file(file_path)
+            self.organize_file(file_path, all_files=files)
         
         print()  # 진행률 출력 후 줄바꿈
         
@@ -288,7 +335,11 @@ def main():
     parser.add_argument('--no-date', action='store_true',
                        help='날짜별 정리 비활성화')
     parser.add_argument('--no-type', action='store_true',
-                       help='유형별 정리 비활성화')
+                       help='유형별 정리 비활성화 (기본값: 비활성화, 연관 파일 보존)')
+    parser.add_argument('--type', action='store_true',
+                       help='유형별 정리 활성화 (확장자 기반 분류)')
+    parser.add_argument('--no-preserve', action='store_true',
+                       help='원본 폴더 구조 보존 비활성화 (기본값: 보존)')
     parser.add_argument('--no-recursive', action='store_true',
                        help='하위 디렉토리 검색 비활성화')
     parser.add_argument('--dry-run', action='store_true',
@@ -297,11 +348,16 @@ def main():
     args = parser.parse_args()
     
     try:
+        # 유형별 정리: --type 옵션이 있으면 활성화, --no-type이 있으면 비활성화
+        # 기본값은 False (연관 파일 보존을 위해)
+        organize_by_type = args.type if args.type else (not args.no_type if args.no_type else False)
+        
         organizer = FileOrganizer(
             source_dir=args.source_dir,
             target_dir=args.target_dir,
             organize_by_date=not args.no_date,
-            organize_by_type=not args.no_type,
+            organize_by_type=organize_by_type,
+            preserve_structure=not args.no_preserve,
             dry_run=args.dry_run
         )
         
