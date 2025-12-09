@@ -1,0 +1,245 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+파일 자동 정리 프로그램
+날짜와 파일 유형에 따라 파일을 자동으로 정리합니다.
+"""
+
+import os
+import shutil
+from pathlib import Path
+from datetime import datetime
+from collections import defaultdict
+import argparse
+import sys
+
+
+class FileOrganizer:
+    """파일을 날짜와 유형별로 자동 정리하는 클래스"""
+    
+    # 파일 유형별 카테고리 정의
+    FILE_CATEGORIES = {
+        '문서': ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', 
+                '.txt', '.rtf', '.odt', '.ods', '.odp', '.csv'],
+        '이미지': ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.webp', 
+                  '.ico', '.tiff', '.tif', '.heic', '.heif'],
+        '비디오': ['.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', 
+                 '.m4v', '.mpg', '.mpeg', '.3gp'],
+        '음악': ['.mp3', '.wav', '.flac', '.aac', '.ogg', '.wma', '.m4a'],
+        '압축파일': ['.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz'],
+        '프로그램': ['.exe', '.msi', '.deb', '.rpm', '.dmg', '.pkg', '.app'],
+        '코드': ['.py', '.js', '.html', '.css', '.java', '.cpp', '.c', '.h',
+                '.php', '.rb', '.go', '.rs', '.ts', '.jsx', '.tsx', '.json',
+                '.xml', '.yaml', '.yml', '.sh', '.bat', '.ps1'],
+        '기타': []  # 위에 해당하지 않는 모든 파일
+    }
+    
+    def __init__(self, source_dir, target_dir=None, organize_by_date=True, 
+                 organize_by_type=True, dry_run=False):
+        """
+        Args:
+            source_dir: 정리할 소스 디렉토리
+            target_dir: 정리된 파일을 저장할 타겟 디렉토리 (None이면 source_dir 내에 정리)
+            organize_by_date: 날짜별로 정리할지 여부
+            organize_by_type: 파일 유형별로 정리할지 여부
+            dry_run: 실제 이동 없이 시뮬레이션만 실행
+        """
+        self.source_dir = Path(source_dir).expanduser().resolve()
+        if target_dir:
+            self.target_dir = Path(target_dir).expanduser().resolve()
+        else:
+            self.target_dir = self.source_dir
+        
+        self.organize_by_date = organize_by_date
+        self.organize_by_type = organize_by_type
+        self.dry_run = dry_run
+        
+        if not self.source_dir.exists():
+            raise ValueError(f"소스 디렉토리가 존재하지 않습니다: {self.source_dir}")
+        
+        # 통계 정보
+        self.stats = defaultdict(int)
+    
+    def get_file_category(self, file_path):
+        """파일 확장자를 기반으로 카테고리를 반환"""
+        ext = file_path.suffix.lower()
+        for category, extensions in self.FILE_CATEGORIES.items():
+            if ext in extensions:
+                return category
+        return '기타'
+    
+    def get_file_date(self, file_path):
+        """파일의 수정 날짜를 반환 (YYYY-MM 형식)"""
+        try:
+            mtime = os.path.getmtime(file_path)
+            date = datetime.fromtimestamp(mtime)
+            return date.strftime('%Y-%m')
+        except OSError:
+            return '날짜없음'
+    
+    def generate_target_path(self, file_path):
+        """파일의 목적지 경로를 생성"""
+        relative_path = file_path.relative_to(self.source_dir)
+        
+        # 이미 정리된 폴더 구조 내에 있으면 건너뛰기
+        parts = relative_path.parts
+        if len(parts) > 1:
+            # 날짜 폴더나 카테고리 폴더 안에 있으면 건너뛰기
+            if parts[0] in self.FILE_CATEGORIES.keys() or \
+               (len(parts[0]) == 7 and parts[0].count('-') == 1):  # YYYY-MM 형식
+                return None
+        
+        target_parts = []
+        
+        if self.organize_by_type:
+            category = self.get_file_category(file_path)
+            target_parts.append(category)
+        
+        if self.organize_by_date:
+            date = self.get_file_date(file_path)
+            target_parts.append(date)
+        
+        if target_parts:
+            target_path = self.target_dir / Path(*target_parts) / file_path.name
+        else:
+            target_path = self.target_dir / file_path.name
+        
+        return target_path
+    
+    def handle_duplicate(self, source_path, target_path):
+        """중복 파일 처리 (이름에 번호 추가)"""
+        if not target_path.exists():
+            return target_path
+        
+        stem = target_path.stem
+        suffix = target_path.suffix
+        parent = target_path.parent
+        counter = 1
+        
+        while True:
+            new_name = f"{stem}_{counter}{suffix}"
+            new_path = parent / new_name
+            if not new_path.exists():
+                return new_path
+            counter += 1
+    
+    def organize_file(self, file_path):
+        """단일 파일을 정리"""
+        if file_path.is_dir():
+            return
+        
+        target_path = self.generate_target_path(file_path)
+        if target_path is None:
+            return  # 이미 정리된 파일
+        
+        # 중복 처리
+        target_path = self.handle_duplicate(file_path, target_path)
+        
+        # 타겟 디렉토리 생성
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        if not self.dry_run:
+            try:
+                shutil.move(str(file_path), str(target_path))
+                self.stats['이동됨'] += 1
+                print(f"✓ {file_path.name} → {target_path.relative_to(self.target_dir)}")
+            except Exception as e:
+                self.stats['오류'] += 1
+                print(f"✗ 오류: {file_path.name} - {e}")
+        else:
+            self.stats['시뮬레이션'] += 1
+            print(f"[시뮬레이션] {file_path.name} → {target_path.relative_to(self.target_dir)}")
+    
+    def organize(self, recursive=True):
+        """디렉토리 내의 모든 파일을 정리"""
+        print(f"\n{'='*60}")
+        print(f"파일 정리 시작")
+        print(f"소스 디렉토리: {self.source_dir}")
+        print(f"타겟 디렉토리: {self.target_dir}")
+        print(f"날짜별 정리: {'예' if self.organize_by_date else '아니오'}")
+        print(f"유형별 정리: {'예' if self.organize_by_type else '아니오'}")
+        print(f"시뮬레이션 모드: {'예' if self.dry_run else '아니오'}")
+        print(f"{'='*60}\n")
+        
+        if recursive:
+            files = list(self.source_dir.rglob('*'))
+        else:
+            files = list(self.source_dir.iterdir())
+        
+        # 디렉토리 제외하고 파일만 처리
+        files = [f for f in files if f.is_file()]
+        
+        if not files:
+            print("정리할 파일이 없습니다.")
+            return
+        
+        print(f"총 {len(files)}개의 파일을 찾았습니다.\n")
+        
+        for file_path in files:
+            self.organize_file(file_path)
+        
+        # 통계 출력
+        print(f"\n{'='*60}")
+        print("정리 완료!")
+        print(f"{'='*60}")
+        for key, value in self.stats.items():
+            print(f"{key}: {value}개")
+        print(f"{'='*60}\n")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='파일을 날짜와 유형별로 자동 정리하는 프로그램',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+사용 예시:
+  # 현재 디렉토리 정리 (시뮬레이션)
+  python file_organizer.py . --dry-run
+  
+  # 특정 디렉토리 정리
+  python file_organizer.py ~/Downloads
+  
+  # 날짜별로만 정리
+  python file_organizer.py ~/Downloads --no-type
+  
+  # 유형별로만 정리
+  python file_organizer.py ~/Downloads --no-date
+        """
+    )
+    
+    parser.add_argument('source_dir', 
+                       help='정리할 소스 디렉토리 경로')
+    parser.add_argument('-t', '--target-dir',
+                       help='정리된 파일을 저장할 타겟 디렉토리 (기본값: 소스 디렉토리)')
+    parser.add_argument('--no-date', action='store_true',
+                       help='날짜별 정리 비활성화')
+    parser.add_argument('--no-type', action='store_true',
+                       help='유형별 정리 비활성화')
+    parser.add_argument('--no-recursive', action='store_true',
+                       help='하위 디렉토리 검색 비활성화')
+    parser.add_argument('--dry-run', action='store_true',
+                       help='실제 이동 없이 시뮬레이션만 실행')
+    
+    args = parser.parse_args()
+    
+    try:
+        organizer = FileOrganizer(
+            source_dir=args.source_dir,
+            target_dir=args.target_dir,
+            organize_by_date=not args.no_date,
+            organize_by_type=not args.no_type,
+            dry_run=args.dry_run
+        )
+        
+        organizer.organize(recursive=not args.no_recursive)
+        
+    except KeyboardInterrupt:
+        print("\n\n사용자에 의해 중단되었습니다.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"\n오류 발생: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()
