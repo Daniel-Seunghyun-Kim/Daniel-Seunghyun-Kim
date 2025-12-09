@@ -9,6 +9,7 @@ Git 히스토리 또는 분류된 폴더 구조를 역으로 추적하여 복구
 import os
 import shutil
 import subprocess
+import json
 from pathlib import Path
 from datetime import datetime
 import re
@@ -285,8 +286,125 @@ class FileRestorer:
         
         return organized_files
     
+    def load_organize_log(self):
+        """파일 분류 로그 파일 로드"""
+        log_file = self.target_dir / '.file_organizer_log.json'
+        
+        if not log_file.exists():
+            return None
+        
+        try:
+            with open(log_file, 'r', encoding='utf-8') as f:
+                log_data = json.load(f)
+            return log_data
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"경고: 로그 파일을 읽을 수 없습니다: {e}")
+            return None
+    
+    def restore_from_log(self):
+        """로그 파일을 사용하여 원래 위치로 복구"""
+        print("이동 로그 파일을 찾는 중...")
+        log_data = self.load_organize_log()
+        
+        if not log_data:
+            print("이동 로그 파일을 찾을 수 없습니다.")
+            print("파일 분류 프로그램이 로그를 생성하지 않았거나 이미 삭제되었을 수 있습니다.")
+            return False
+        
+        if not isinstance(log_data, list):
+            print("경고: 로그 파일 형식이 올바르지 않습니다.")
+            return False
+        
+        print(f"총 {len(log_data)}개의 이동 기록을 찾았습니다.\n")
+        
+        # 역순으로 처리 (최신부터)
+        log_data.reverse()
+        
+        # 파일 복구
+        total = len(log_data)
+        restored_count = 0
+        
+        for idx, log_entry in enumerate(log_data, 1):
+            if idx % 10 == 0 or idx == total:
+                progress = (idx / total) * 100
+                print(f"처리 중: {idx}/{total} ({progress:.1f}%)", end='\r')
+                sys.stdout.flush()
+            
+            try:
+                moved_to = log_entry.get('moved_to')
+                original = log_entry.get('original')
+                
+                if not moved_to or not original:
+                    continue
+                
+                # 현재 파일 경로 (분류된 위치)
+                current_path = self.target_dir / moved_to
+                
+                # 원래 경로
+                original_path = self.target_dir / original
+                
+                # 파일이 존재하는지 확인
+                if not current_path.exists():
+                    # 파일이 이미 이동되었거나 삭제된 경우
+                    continue
+                
+                # 원래 위치로 복구
+                if not self.dry_run:
+                    try:
+                        # 원래 디렉토리 생성
+                        original_path.parent.mkdir(parents=True, exist_ok=True)
+                        
+                        # 파일이 이미 원래 위치에 있는지 확인
+                        if current_path == original_path:
+                            self.stats['변경없음'] += 1
+                            continue
+                        
+                        # 중복 파일 처리
+                        final_path = original_path
+                        if final_path.exists():
+                            stem = final_path.stem
+                            suffix = final_path.suffix
+                            counter = 1
+                            while final_path.exists():
+                                new_name = f"{stem}_복구_{counter}{suffix}"
+                                final_path = final_path.parent / new_name
+                                counter += 1
+                        
+                        # 파일 이동
+                        shutil.move(str(current_path), str(final_path))
+                        self.stats['복구됨'] += 1
+                        restored_count += 1
+                        
+                        if final_path != original_path:
+                            print(f"✓ 복구: {moved_to} → {final_path.relative_to(self.target_dir)} (중복으로 이름 변경)")
+                        else:
+                            print(f"✓ 복구: {moved_to} → {original}")
+                            
+                    except Exception as e:
+                        self.stats['오류'] += 1
+                        print(f"✗ 오류: {moved_to} → {original} - {e}")
+                else:
+                    self.stats['시뮬레이션'] += 1
+                    print(f"[시뮬레이션] 복구: {moved_to} → {original}")
+                    restored_count += 1
+            
+            except Exception as e:
+                self.stats['오류'] += 1
+                print(f"✗ 로그 항목 처리 오류: {e}")
+        
+        print()  # 진행률 출력 후 줄바꿈
+        
+        if restored_count > 0:
+            print(f"\n{restored_count}개의 파일이 원래 위치로 복구되었습니다.")
+        
+        # 빈 폴더 정리
+        if not self.dry_run:
+            self.cleanup_empty_folders()
+        
+        return True
+    
     def restore_from_organized_structure(self):
-        """분류된 폴더 구조에서 파일 복구"""
+        """분류된 폴더 구조에서 파일 복구 (로그가 없는 경우)"""
         print("분류된 파일들을 찾는 중...")
         organized_files = self.find_organized_files()
         
@@ -296,6 +414,8 @@ class FileRestorer:
             return
         
         print(f"총 {len(organized_files)}개의 분류된 파일을 찾았습니다.\n")
+        print("경고: 이동 로그가 없어 원래 위치를 알 수 없습니다.")
+        print("파일들을 루트 디렉토리로 이동합니다.\n")
         
         # 파일 복구
         total = len(organized_files)
@@ -427,16 +547,20 @@ class FileRestorer:
                 print("Git 커밋을 찾을 수 없습니다. 폴더 구조 기반 복구를 시도합니다.\n")
                 self.restore_from_organized_structure()
         
-        # Git 저장소가 아닌 경우 - 폴더 구조 기반 복구
+        # Git 저장소가 아닌 경우 - 로그 파일 또는 폴더 구조 기반 복구
         else:
             print(f"\n{'='*60}")
-            print(f"파일 복구 시작 (폴더 구조 기반)")
+            print(f"파일 복구 시작")
             print(f"대상 디렉토리: {self.target_dir}")
             print(f"복구 위치: {self.restore_dir}")
             print(f"시뮬레이션 모드: {'예' if self.dry_run else '아니오'}")
             print(f"{'='*60}\n")
             
-            self.restore_from_organized_structure()
+            # 먼저 로그 파일로 복구 시도
+            if not self.restore_from_log():
+                # 로그가 없으면 폴더 구조 기반 복구
+                print("\n로그 파일 기반 복구 실패. 폴더 구조 기반 복구를 시도합니다.\n")
+                self.restore_from_organized_structure()
         
         # 통계 출력
         print(f"\n{'='*60}")
