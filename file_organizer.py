@@ -9,10 +9,13 @@ import os
 import shutil
 from pathlib import Path
 from datetime import datetime
-from collections import defaultdict
+from collections import defaultdict, Counter
 import argparse
 import sys
 import json
+import re
+import hashlib
+from difflib import SequenceMatcher
 
 
 class FileOrganizer:
@@ -36,7 +39,8 @@ class FileOrganizer:
     }
     
     def __init__(self, source_dir, target_dir=None, organize_by_date=True, 
-                 organize_by_type=False, preserve_structure=True, dry_run=False, log_file=None):
+                 organize_by_type=False, preserve_structure=True, 
+                 content_based=True, similarity_threshold=0.3, dry_run=False, log_file=None):
         """
         Args:
             source_dir: 정리할 소스 디렉토리
@@ -44,6 +48,8 @@ class FileOrganizer:
             organize_by_date: 날짜별로 정리할지 여부
             organize_by_type: 파일 유형별로 정리할지 여부 (기본값: False, 연관 파일 보존을 위해)
             preserve_structure: 원본 폴더 구조를 보존할지 여부 (기본값: True)
+            content_based: 파일 내용 기반 분류 사용 여부 (기본값: True)
+            similarity_threshold: 파일 유사도 임계값 (0.0-1.0, 기본값: 0.3)
             dry_run: 실제 이동 없이 시뮬레이션만 실행
             log_file: 이동 이력을 저장할 로그 파일 경로 (None이면 자동 생성)
         """
@@ -56,6 +62,8 @@ class FileOrganizer:
         self.organize_by_date = organize_by_date
         self.organize_by_type = organize_by_type
         self.preserve_structure = preserve_structure
+        self.content_based = content_based
+        self.similarity_threshold = similarity_threshold
         self.dry_run = dry_run
         
         if not self.source_dir.exists():
@@ -90,6 +98,191 @@ class FileOrganizer:
         except OSError:
             return '날짜없음'
     
+    def extract_keywords_from_text(self, text, max_keywords=20):
+        """텍스트에서 키워드 추출"""
+        if not text:
+            return []
+        
+        # 한글, 영문, 숫자만 추출
+        words = re.findall(r'[가-힣a-zA-Z0-9]+', text.lower())
+        
+        # 불용어 제거 (너무 짧은 단어, 일반적인 단어)
+        stopwords = {'the', 'is', 'at', 'of', 'on', 'and', 'a', 'an', 'as', 'are', 
+                    'was', 'were', 'been', 'be', 'have', 'has', 'had', 'do', 'does',
+                    'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must',
+                    'can', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she',
+                    'it', 'we', 'they', 'what', 'which', 'who', 'when', 'where', 'why',
+                    'how', 'all', 'each', 'every', 'both', 'few', 'more', 'most', 'other',
+                    'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so',
+                    'than', 'too', 'very', 'just', 'now'}
+        
+        # 한글 불용어
+        korean_stopwords = {'그', '것', '수', '있', '없', '하', '되', '되다', '되', '되', 
+                           '되', '되', '되', '되', '되', '되', '되', '되', '되', '되'}
+        
+        # 단어 길이 필터링 및 불용어 제거
+        filtered_words = [w for w in words 
+                          if len(w) >= 2 and w not in stopwords and w not in korean_stopwords]
+        
+        # 빈도 계산
+        word_freq = Counter(filtered_words)
+        
+        # 상위 키워드 반환
+        keywords = [word for word, count in word_freq.most_common(max_keywords)]
+        return keywords
+    
+    def extract_file_content_features(self, file_path):
+        """파일에서 내용 특징 추출 (키워드, 메타데이터 등)"""
+        features = {
+            'keywords': [],
+            'filename_words': [],
+            'path_words': [],
+            'size': 0,
+            'extension': file_path.suffix.lower()
+        }
+        
+        try:
+            # 파일명에서 키워드 추출
+            stem = file_path.stem.lower()
+            filename_words = re.findall(r'[가-힣a-zA-Z0-9]+', stem)
+            features['filename_words'] = filename_words
+            
+            # 경로에서 키워드 추출
+            path_parts = [p.lower() for p in file_path.parts[:-1]]
+            path_text = ' '.join(path_parts)
+            path_words = re.findall(r'[가-힣a-zA-Z0-9]+', path_text)
+            features['path_words'] = path_words
+            
+            # 파일 크기
+            features['size'] = file_path.stat().st_size
+            
+            # 텍스트 파일 내용 읽기
+            text_extensions = ['.txt', '.md', '.log', '.csv', '.json', '.xml', 
+                            '.py', '.js', '.html', '.css', '.java', '.cpp', '.c',
+                            '.sh', '.bat', '.ps1', '.yml', '.yaml']
+            
+            if file_path.suffix.lower() in text_extensions:
+                try:
+                    # 작은 파일만 읽기 (1MB 이하)
+                    if features['size'] <= 1024 * 1024:
+                        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                            content = f.read(50000)  # 최대 50KB만 읽기
+                            features['keywords'] = self.extract_keywords_from_text(content)
+                except:
+                    pass
+        
+        except Exception as e:
+            pass
+        
+        return features
+    
+    def calculate_similarity(self, features1, features2):
+        """두 파일의 특징 간 유사도 계산 (0.0-1.0)"""
+        similarity_scores = []
+        
+        # 파일명 키워드 유사도
+        if features1['filename_words'] and features2['filename_words']:
+            common_filename = set(features1['filename_words']) & set(features2['filename_words'])
+            total_filename = set(features1['filename_words']) | set(features2['filename_words'])
+            if total_filename:
+                filename_sim = len(common_filename) / len(total_filename)
+                similarity_scores.append(filename_sim * 0.3)  # 가중치 30%
+        
+        # 경로 키워드 유사도
+        if features1['path_words'] and features2['path_words']:
+            common_path = set(features1['path_words']) & set(features2['path_words'])
+            total_path = set(features1['path_words']) | set(features2['path_words'])
+            if total_path:
+                path_sim = len(common_path) / len(total_path)
+                similarity_scores.append(path_sim * 0.2)  # 가중치 20%
+        
+        # 내용 키워드 유사도
+        if features1['keywords'] and features2['keywords']:
+            common_keywords = set(features1['keywords']) & set(features2['keywords'])
+            total_keywords = set(features1['keywords']) | set(features2['keywords'])
+            if total_keywords:
+                keyword_sim = len(common_keywords) / len(total_keywords)
+                similarity_scores.append(keyword_sim * 0.4)  # 가중치 40%
+        
+        # 확장자 유사도
+        if features1['extension'] == features2['extension']:
+            similarity_scores.append(0.1)  # 가중치 10%
+        
+        # 전체 유사도 계산
+        total_similarity = sum(similarity_scores) if similarity_scores else 0.0
+        return total_similarity
+    
+    def cluster_files_by_content(self, files):
+        """파일 내용 기반으로 클러스터링"""
+        if not files:
+            return {}
+        
+        print("파일 내용 분석 중...")
+        sys.stdout.flush()
+        
+        # 모든 파일의 특징 추출
+        file_features = {}
+        for idx, file_path in enumerate(files):
+            if idx % 50 == 0:
+                print(f"  분석 중... {idx}/{len(files)}", end='\r')
+                sys.stdout.flush()
+            file_features[file_path] = self.extract_file_content_features(file_path)
+        
+        print(f"\n파일 간 유사도 계산 중...")
+        sys.stdout.flush()
+        
+        # 클러스터링 (간단한 그룹화 알고리즘)
+        clusters = {}
+        cluster_id = 0
+        
+        for idx, file1 in enumerate(files):
+            if idx % 20 == 0:
+                print(f"  클러스터링 중... {idx}/{len(files)}", end='\r')
+                sys.stdout.flush()
+            
+            assigned = False
+            features1 = file_features[file1]
+            
+            # 기존 클러스터와 유사도 확인
+            for cluster_name, cluster_files in clusters.items():
+                if not cluster_files:
+                    continue
+                
+                # 클러스터의 대표 파일과 비교
+                representative = cluster_files[0]
+                features2 = file_features[representative]
+                similarity = self.calculate_similarity(features1, features2)
+                
+                if similarity >= self.similarity_threshold:
+                    clusters[cluster_name].append(file1)
+                    assigned = True
+                    break
+            
+            # 기존 클러스터에 할당되지 않으면 새 클러스터 생성
+            if not assigned:
+                # 클러스터 이름 생성 (파일명 키워드 기반)
+                keywords = features1['filename_words'][:3]  # 상위 3개 키워드
+                if not keywords and features1['path_words']:
+                    keywords = features1['path_words'][:3]
+                if not keywords:
+                    keywords = ['기타']
+                
+                cluster_name = '_'.join(keywords[:2]) if len(keywords) >= 2 else keywords[0]
+                cluster_name = cluster_name[:30]  # 이름 길이 제한
+                
+                # 중복 방지
+                base_name = cluster_name
+                counter = 1
+                while cluster_name in clusters:
+                    cluster_name = f"{base_name}_{counter}"
+                    counter += 1
+                
+                clusters[cluster_name] = [file1]
+        
+        print()  # 줄바꿈
+        
+        return clusters
+    
     def get_related_files_group(self, file_path, all_files):
         """연관된 파일들을 찾아 그룹명을 반환 (파일명 기반)"""
         stem = file_path.stem.lower()
@@ -120,8 +313,8 @@ class FileOrganizer:
             return relative_path.parts[0]
         return None
     
-    def generate_target_path(self, file_path, all_files=None):
-        """파일의 목적지 경로를 생성 (연관 파일 보존)"""
+    def generate_target_path(self, file_path, cluster_name=None, all_files=None):
+        """파일의 목적지 경로를 생성 (내용 기반 클러스터링 또는 연관 파일 보존)"""
         relative_path = file_path.relative_to(self.source_dir)
         
         # 이미 정리된 폴더 구조 내에 있으면 건너뛰기
@@ -139,8 +332,11 @@ class FileOrganizer:
             date = self.get_file_date(file_path)
             target_parts.append(date)
         
+        # 내용 기반 클러스터링 모드
+        if self.content_based and cluster_name:
+            target_parts.append(cluster_name)
         # 연관 파일 보존 모드
-        if self.preserve_structure:
+        elif self.preserve_structure:
             # 원본 폴더 구조 보존
             original_folder = self.get_original_folder_name(file_path)
             if original_folder:
@@ -180,12 +376,12 @@ class FileOrganizer:
                 return new_path
             counter += 1
     
-    def organize_file(self, file_path, all_files=None):
+    def organize_file(self, file_path, cluster_name=None, all_files=None):
         """단일 파일을 정리"""
         if file_path.is_dir():
             return
         
-        target_path = self.generate_target_path(file_path, all_files)
+        target_path = self.generate_target_path(file_path, cluster_name, all_files)
         if target_path is None:
             return  # 이미 정리된 파일
         
@@ -228,6 +424,9 @@ class FileOrganizer:
         print(f"날짜별 정리: {'예' if self.organize_by_date else '아니오'}")
         print(f"유형별 정리: {'예' if self.organize_by_type else '아니오'}")
         print(f"구조 보존: {'예' if self.preserve_structure else '아니오'}")
+        print(f"내용 기반 분류: {'예' if self.content_based else '아니오'}")
+        if self.content_based:
+            print(f"유사도 임계값: {self.similarity_threshold}")
         print(f"시뮬레이션 모드: {'예' if self.dry_run else '아니오'}")
         print(f"{'='*60}\n")
         
@@ -261,6 +460,26 @@ class FileOrganizer:
             print("정리할 파일이 없습니다.")
             return
         
+        # 내용 기반 클러스터링
+        file_to_cluster = {}
+        if self.content_based:
+            clusters = self.cluster_files_by_content(files)
+            print(f"\n{len(clusters)}개의 클러스터를 생성했습니다.\n")
+            
+            # 파일별 클러스터 매핑 생성
+            for cluster_name, cluster_files in clusters.items():
+                for file_path in cluster_files:
+                    file_to_cluster[file_path] = cluster_name
+            
+            # 클러스터 정보 출력
+            if not self.dry_run:
+                print("클러스터 정보:")
+                for cluster_name, cluster_files in list(clusters.items())[:10]:  # 상위 10개만 표시
+                    print(f"  {cluster_name}: {len(cluster_files)}개 파일")
+                if len(clusters) > 10:
+                    print(f"  ... 외 {len(clusters) - 10}개 클러스터")
+                print()
+        
         # 파일 처리 (진행률 표시)
         total = len(files)
         for idx, file_path in enumerate(files, 1):
@@ -270,7 +489,8 @@ class FileOrganizer:
                 print(f"처리 중: {idx}/{total} ({progress:.1f}%)", end='\r')
                 sys.stdout.flush()
             
-            self.organize_file(file_path, all_files=files)
+            cluster_name = file_to_cluster.get(file_path)
+            self.organize_file(file_path, cluster_name=cluster_name, all_files=files)
         
         print()  # 진행률 출력 후 줄바꿈
         
@@ -340,6 +560,10 @@ def main():
                        help='유형별 정리 활성화 (확장자 기반 분류)')
     parser.add_argument('--no-preserve', action='store_true',
                        help='원본 폴더 구조 보존 비활성화 (기본값: 보존)')
+    parser.add_argument('--no-content', action='store_true',
+                       help='파일 내용 기반 분류 비활성화 (기본값: 활성화)')
+    parser.add_argument('--similarity', type=float, default=0.3,
+                       help='파일 유사도 임계값 (0.0-1.0, 기본값: 0.3)')
     parser.add_argument('--no-recursive', action='store_true',
                        help='하위 디렉토리 검색 비활성화')
     parser.add_argument('--dry-run', action='store_true',
@@ -358,6 +582,8 @@ def main():
             organize_by_date=not args.no_date,
             organize_by_type=organize_by_type,
             preserve_structure=not args.no_preserve,
+            content_based=not args.no_content,
+            similarity_threshold=args.similarity,
             dry_run=args.dry_run
         )
         
