@@ -14,11 +14,17 @@
 ∂T/∂t = α * (∂²T/∂x² + ∂²T/∂y²)
 ```
 
+### 반도체 소자 열전도 방정식 (내부 열원 포함)
+```
+∂T/∂t = α * ∇²T + S
+```
+
 여기서:
 - `T`: 온도 (℃)
 - `t`: 시간 (s)
 - `α`: 열확산계수 (m²/s)
 - `x, y`: 공간 좌표 (m)
+- `S`: 내부 열 생성률 (K/s)
 
 ## 설치
 
@@ -37,9 +43,11 @@ python main.py
 ```
 
 이 명령은 다음을 생성합니다:
-- 1D 열전도 해석해 애니메이션
-- 1D 열전도 수치해법 애니메이션
-- 2D 열전도 수치해법 애니메이션
+- 1D 열전도 해석해 애니메이션 (외부→내부 열전도)
+- 1D 열전도 수치해법 애니메이션 (외부→내부 열전도)
+- 2D 열전도 수치해법 애니메이션 (외부→내부 열전도)
+- 1D 반도체 소자 열전도 애니메이션 (내부→외부 열전도)
+- 2D 반도체 소자 열전도 애니메이션 (내부→외부 열전도)
 
 ### 개별 실행
 
@@ -51,6 +59,11 @@ python heat_conduction_1d.py
 #### 2D 열전도
 ```bash
 python heat_conduction_2d.py
+```
+
+#### 반도체 소자 열전도 (내부 열원)
+```bash
+python heat_conduction_semiconductor.py
 ```
 
 ## 구현 내용
@@ -65,6 +78,18 @@ python heat_conduction_2d.py
 - 시각화:
   - 2D 컬러맵 애니메이션
   - 3D 표면 플롯 애니메이션
+
+### 반도체 소자 열전도 (`heat_conduction_semiconductor.py`)
+- **시나리오**: 내부에서 열이 생성되고 경계에서 냉각됨
+- **수치해법**: FTCS 방법 (내부 열원 항 포함)
+- **특징**:
+  - 가우시안 분포의 내부 열원
+  - 경계 냉각 조건 (고정 온도)
+  - 반도체 소자의 전력 소비에 의한 발열 시뮬레이션
+- **시각화**:
+  - 1D: 온도 프로파일 + 열원 분포
+  - 2D: 컬러맵 애니메이션 (저온=청색, 고온=적색)
+  - 3D: 표면 플롯 애니메이션
 
 ## 파라미터 설정
 
@@ -88,10 +113,13 @@ python heat_conduction_2d.py
 ## 출력 파일
 
 애니메이션은 다음 형식으로 저장됩니다:
-- `heat_conduction_1d_analytical.gif`
-- `heat_conduction_1d_numerical.gif`
-- `heat_conduction_2d.gif`
-- `heat_conduction_2d_3d.gif`
+- `heat_conduction_1d_analytical.gif` - 1D 해석해 (외부→내부)
+- `heat_conduction_1d_numerical.gif` - 1D 수치해법 (외부→내부)
+- `heat_conduction_2d.gif` - 2D 수치해법 (외부→내부)
+- `heat_conduction_2d_3d.gif` - 2D 3D 표면 (외부→내부)
+- `heat_conduction_semiconductor_1d.gif` - 1D 반도체 소자 (내부→외부)
+- `heat_conduction_semiconductor_2d.gif` - 2D 반도체 소자 (내부→외부)
+- `heat_conduction_semiconductor_2d_3d.gif` - 2D 반도체 소자 3D 표면 (내부→외부)
 
 ## 예제
 
@@ -109,3 +137,21 @@ python heat_conduction_2d.py
 - 초기 온도: 0℃
 - 경계 온도: 100℃
 - 열확산계수: 0.01 m²/s
+
+**반도체 소자 (내부 열원):**
+- 영역 크기: 1.0 m (1D) 또는 1.0 m × 1.0 m (2D)
+- 초기 온도: 25℃
+- 냉각 경계 온도: 25℃
+- 열원 위치: 중심부
+- 열원 강도: 500 K/s
+- 열확산계수: 0.01 m²/s
+
+## 시나리오 비교
+
+### 외부→내부 열전도 (기본 시나리오)
+- 경계에서 고온이 유지되고 내부로 열이 전도됨
+- 예: 가열된 막대의 냉각 과정
+
+### 내부→외부 열전도 (반도체 소자 시나리오)
+- 내부에서 열이 생성되고 경계에서 냉각됨
+- 예: 반도체 소자의 전력 소비에 의한 발열 및 방열

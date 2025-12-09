@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from font_setup import setup_korean_font
 from heat_conduction_1d import HeatConduction1D
 from heat_conduction_2d import HeatConduction2D
+from heat_conduction_semiconductor import SemiconductorHeatConduction1D, SemiconductorHeatConduction2D
 
 # 한글 폰트 설정
 setup_korean_font()
@@ -60,6 +61,31 @@ def main():
     print(f"안정성 파라미터: rx = {0.01 * dt_2d / (dx_2d**2):.4f}, ry = {0.01 * dt_2d / (dy_2d**2):.4f}")
     print("컬러맵 애니메이션 생성 중...")
     heat_2d.animate_temperature(save_gif=True)
+    
+    # 반도체 소자 열전도 시뮬레이션 (내부 열원)
+    print("\n[반도체 소자 열전도 - 내부 열원]")
+    print("-" * 60)
+    print("내부에서 열이 생성되고 경계에서 냉각되는 경우")
+    
+    # 1D 반도체 소자
+    print("\n[1D 반도체 소자]")
+    heat_semi_1d = SemiconductorHeatConduction1D(
+        L=1.0, T0=25.0, T_cooling=25.0,
+        alpha=0.01, heat_source_center=0.5, heat_source_width=0.1,
+        heat_source_power=500.0, nx=100, nt=2000, dt=dt_1d
+    )
+    print("애니메이션 생성 중...")
+    heat_semi_1d.animate_temperature(save_gif=True)
+    
+    # 2D 반도체 소자
+    print("\n[2D 반도체 소자]")
+    heat_semi_2d = SemiconductorHeatConduction2D(
+        Lx=1.0, Ly=1.0, T0=25.0, T_cooling=25.0,
+        alpha=0.01, heat_source_center=(0.5, 0.5), heat_source_radius=0.1,
+        heat_source_power=500.0, nx=50, ny=50, nt=2000, dt=dt_2d
+    )
+    print("컬러맵 애니메이션 생성 중...")
+    heat_semi_2d.animate_temperature(save_gif=True)
     
     print("\n" + "=" * 60)
     print("모든 애니메이션 생성 완료!")
