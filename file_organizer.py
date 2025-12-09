@@ -161,22 +161,48 @@ class FileOrganizer:
         print(f"시뮬레이션 모드: {'예' if self.dry_run else '아니오'}")
         print(f"{'='*60}\n")
         
-        if recursive:
-            files = list(self.source_dir.rglob('*'))
-        else:
-            files = list(self.source_dir.iterdir())
+        # 파일 스캔 중 진행 상황 표시
+        print("파일 스캔 중... (시간이 걸릴 수 있습니다)")
+        sys.stdout.flush()
         
-        # 디렉토리 제외하고 파일만 처리
-        files = [f for f in files if f.is_file()]
+        files = []
+        file_count = 0
+        
+        if recursive:
+            # 재귀적으로 파일 찾기 (진행 상황 표시)
+            for item in self.source_dir.rglob('*'):
+                if item.is_file():
+                    files.append(item)
+                    file_count += 1
+                    # 100개마다 진행 상황 출력
+                    if file_count % 100 == 0:
+                        print(f"  스캔 중... {file_count}개 파일 발견", end='\r')
+                        sys.stdout.flush()
+        else:
+            # 현재 디렉토리만
+            for item in self.source_dir.iterdir():
+                if item.is_file():
+                    files.append(item)
+                    file_count += 1
+        
+        print(f"\n총 {len(files)}개의 파일을 찾았습니다.\n")
         
         if not files:
             print("정리할 파일이 없습니다.")
             return
         
-        print(f"총 {len(files)}개의 파일을 찾았습니다.\n")
-        
-        for file_path in files:
+        # 파일 처리 (진행률 표시)
+        total = len(files)
+        for idx, file_path in enumerate(files, 1):
+            # 10개마다 또는 마지막 파일일 때 진행률 출력
+            if idx % 10 == 0 or idx == total:
+                progress = (idx / total) * 100
+                print(f"처리 중: {idx}/{total} ({progress:.1f}%)", end='\r')
+                sys.stdout.flush()
+            
             self.organize_file(file_path)
+        
+        print()  # 진행률 출력 후 줄바꿈
         
         # 통계 출력
         print(f"\n{'='*60}")
