@@ -8,10 +8,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+from font_setup import setup_korean_font
+
+# 한글 폰트 설정
+setup_korean_font()
 
 
 class HeatConduction1D:
-    def __init__(self, L=1.0, T0=0.0, T_left=100.0, T_right=0.0, alpha=0.01, nx=100, nt=1000, dt=0.0001):
+    def __init__(self, L=1.0, T0=0.0, T_left=100.0, T_right=0.0, alpha=0.01, nx=100, nt=2000, dt=0.0001):
         """
         Parameters:
         L: 막대 길이 (m)
@@ -40,7 +44,7 @@ class HeatConduction1D:
         r = alpha * dt / (self.dx**2)
         if r > 0.5:
             print(f"경고: 안정성 조건 위반 (r = {r:.3f} > 0.5)")
-            print(f"dt를 {0.5 * dx**2 / alpha:.6f} 이하로 줄이세요.")
+            print(f"dt를 {0.5 * self.dx**2 / alpha:.6f} 이하로 줄이세요.")
         
         # 초기 조건
         self.T_initial = np.full(nx, T0)
@@ -102,13 +106,13 @@ class HeatConduction1D:
         
         if method == 'analytical':
             # 해석해 애니메이션
-            line, = ax.plot(self.x, self.T_initial, 'b-', linewidth=2, label='해석해')
+            line, = ax.plot(self.x, self.T_initial, 'b-', linewidth=2, label='Analytical')
             ax.set_xlim(0, self.L)
             ax.set_ylim(min(self.T_left, self.T_right, self.T0) - 10, 
                        max(self.T_left, self.T_right, self.T0) + 10)
-            ax.set_xlabel('위치 x (m)', fontsize=12)
-            ax.set_ylabel('온도 T (℃)', fontsize=12)
-            ax.set_title('1D 열전도 방정식 - 해석해', fontsize=14, fontweight='bold')
+            ax.set_xlabel('Position x (m)', fontsize=12)
+            ax.set_ylabel('Temperature T (℃)', fontsize=12)
+            ax.set_title('1D Heat Conduction - Analytical Solution', fontsize=14, fontweight='bold')
             ax.grid(True, alpha=0.3)
             ax.legend()
             
@@ -119,7 +123,7 @@ class HeatConduction1D:
                 t = frame * self.dt
                 T = self.analytical_solution(t)
                 line.set_ydata(T)
-                time_text.set_text(f'시간 t = {t:.4f} s')
+                time_text.set_text(f'Time t = {t:.4f} s')
                 return line, time_text
             
             anim = FuncAnimation(fig, animate, frames=self.nt, interval=50, blit=True, repeat=True)
@@ -127,13 +131,13 @@ class HeatConduction1D:
         else:  # numerical
             T_history = self.numerical_solution_ftcs()
             
-            line, = ax.plot(self.x, T_history[0], 'r-', linewidth=2, label='수치해법 (FTCS)')
+            line, = ax.plot(self.x, T_history[0], 'r-', linewidth=2, label='Numerical (FTCS)')
             ax.set_xlim(0, self.L)
             ax.set_ylim(min(self.T_left, self.T_right, self.T0) - 10, 
                        max(self.T_left, self.T_right, self.T0) + 10)
-            ax.set_xlabel('위치 x (m)', fontsize=12)
-            ax.set_ylabel('온도 T (℃)', fontsize=12)
-            ax.set_title('1D 열전도 방정식 - 수치해법 (FTCS)', fontsize=14, fontweight='bold')
+            ax.set_xlabel('Position x (m)', fontsize=12)
+            ax.set_ylabel('Temperature T (℃)', fontsize=12)
+            ax.set_title('1D Heat Conduction - Numerical Method (FTCS)', fontsize=14, fontweight='bold')
             ax.grid(True, alpha=0.3)
             ax.legend()
             
@@ -142,7 +146,7 @@ class HeatConduction1D:
             
             def animate(frame):
                 line.set_ydata(T_history[frame])
-                time_text.set_text(f'시간 t = {frame * self.dt:.4f} s')
+                time_text.set_text(f'Time t = {frame * self.dt:.4f} s')
                 return line, time_text
             
             anim = FuncAnimation(fig, animate, frames=len(T_history), interval=50, blit=True, repeat=True)
@@ -166,7 +170,7 @@ if __name__ == "__main__":
     # 해석해
     heat_1d_analytical = HeatConduction1D(
         L=1.0, T0=0.0, T_left=100.0, T_right=0.0,
-        alpha=0.01, nx=100, nt=500, dt=dt
+        alpha=0.01, nx=100, nt=2000, dt=dt
     )
     print("1D 열전도 - 해석해 애니메이션 생성 중...")
     heat_1d_analytical.animate_temperature(method='analytical', save_gif=True)
@@ -174,7 +178,7 @@ if __name__ == "__main__":
     # 수치해법
     heat_1d_numerical = HeatConduction1D(
         L=1.0, T0=0.0, T_left=100.0, T_right=0.0,
-        alpha=0.01, nx=100, nt=500, dt=dt
+        alpha=0.01, nx=100, nt=2000, dt=dt
     )
     print("1D 열전도 - 수치해법 애니메이션 생성 중...")
     heat_1d_numerical.animate_temperature(method='numerical', save_gif=True)

@@ -4,8 +4,13 @@
 """
 
 import numpy as np
+import matplotlib.pyplot as plt
+from font_setup import setup_korean_font
 from heat_conduction_1d import HeatConduction1D
 from heat_conduction_2d import HeatConduction2D
+
+# 한글 폰트 설정
+setup_korean_font()
 
 
 def main():
@@ -21,7 +26,7 @@ def main():
     
     heat_1d_analytical = HeatConduction1D(
         L=1.0, T0=0.0, T_left=100.0, T_right=0.0,
-        alpha=0.01, nx=100, nt=500, dt=dt_1d
+        alpha=0.01, nx=100, nt=2000, dt=dt_1d
     )
     print(f"격자 크기: dx = {dx_1d:.4f} m")
     print(f"시간 간격: dt = {dt_1d:.6f} s")
@@ -34,7 +39,7 @@ def main():
     print("-" * 60)
     heat_1d_numerical = HeatConduction1D(
         L=1.0, T0=0.0, T_left=100.0, T_right=0.0,
-        alpha=0.01, nx=100, nt=500, dt=dt_1d
+        alpha=0.01, nx=100, nt=2000, dt=dt_1d
     )
     print("애니메이션 생성 중...")
     heat_1d_numerical.animate_temperature(method='numerical', save_gif=True)
@@ -48,7 +53,7 @@ def main():
     
     heat_2d = HeatConduction2D(
         Lx=1.0, Ly=1.0, T0=0.0, T_boundary=100.0,
-        alpha=0.01, nx=50, ny=50, nt=300, dt=dt_2d
+        alpha=0.01, nx=50, ny=50, nt=2000, dt=dt_2d
     )
     print(f"격자 크기: dx = {dx_2d:.4f} m, dy = {dy_2d:.4f} m")
     print(f"시간 간격: dt = {dt_2d:.6f} s")

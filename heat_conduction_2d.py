@@ -9,11 +9,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib import cm
+from font_setup import setup_korean_font
+
+# 한글 폰트 설정
+setup_korean_font()
 
 
 class HeatConduction2D:
     def __init__(self, Lx=1.0, Ly=1.0, T0=0.0, T_boundary=100.0, alpha=0.01, 
-                 nx=50, ny=50, nt=500, dt=0.0001):
+                 nx=50, ny=50, nt=2000, dt=0.0001):
         """
         Parameters:
         Lx, Ly: 영역 크기 (m)
@@ -95,24 +99,24 @@ class HeatConduction2D:
         
         fig, ax = plt.subplots(figsize=(10, 8))
         
-        # 초기 컬러맵
+        # 초기 컬러맵 (저온=청색, 고온=적색)
         im = ax.imshow(T_history[0], extent=[0, self.Lx, 0, self.Ly], 
-                      origin='lower', cmap='hot', interpolation='bilinear',
+                      origin='lower', cmap='coolwarm', interpolation='bilinear',
                       vmin=self.T0, vmax=self.T_boundary)
         
         ax.set_xlabel('x (m)', fontsize=12)
         ax.set_ylabel('y (m)', fontsize=12)
-        ax.set_title('2D 열전도 방정식 - 수치해법 (FTCS)', fontsize=14, fontweight='bold')
+        ax.set_title('2D Heat Conduction - Numerical Method (FTCS)', fontsize=14, fontweight='bold')
         
         cbar = plt.colorbar(im, ax=ax)
-        cbar.set_label('온도 T (℃)', fontsize=12)
+        cbar.set_label('Temperature T (℃)', fontsize=12)
         
         time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes, fontsize=12,
                           verticalalignment='top', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
         
         def animate(frame):
             im.set_array(T_history[frame])
-            time_text.set_text(f'시간 t = {frame * self.dt:.4f} s')
+            time_text.set_text(f'Time t = {frame * self.dt:.4f} s')
             return [im, time_text]
         
         anim = FuncAnimation(fig, animate, frames=len(T_history), interval=50, blit=True, repeat=True)
@@ -135,14 +139,14 @@ class HeatConduction2D:
         fig = plt.figure(figsize=(12, 8))
         ax = fig.add_subplot(111, projection='3d')
         
-        # 초기 표면
-        surf = ax.plot_surface(self.X, self.Y, T_history[0], cmap='hot', 
+        # 초기 표면 (저온=청색, 고온=적색)
+        surf = ax.plot_surface(self.X, self.Y, T_history[0], cmap='coolwarm', 
                               linewidth=0, antialiased=True, vmin=self.T0, vmax=self.T_boundary)
         
         ax.set_xlabel('x (m)', fontsize=12)
         ax.set_ylabel('y (m)', fontsize=12)
-        ax.set_zlabel('온도 T (℃)', fontsize=12)
-        ax.set_title('2D 열전도 방정식 - 3D 표면', fontsize=14, fontweight='bold')
+        ax.set_zlabel('Temperature T (℃)', fontsize=12)
+        ax.set_title('2D Heat Conduction - 3D Surface', fontsize=14, fontweight='bold')
         ax.set_zlim(self.T0, self.T_boundary)
         
         fig.colorbar(surf, ax=ax, shrink=0.5, aspect=5)
@@ -152,14 +156,14 @@ class HeatConduction2D:
         
         def animate(frame):
             ax.clear()
-            surf = ax.plot_surface(self.X, self.Y, T_history[frame], cmap='hot',
+            surf = ax.plot_surface(self.X, self.Y, T_history[frame], cmap='coolwarm',
                                   linewidth=0, antialiased=True, vmin=self.T0, vmax=self.T_boundary)
             ax.set_xlabel('x (m)', fontsize=12)
             ax.set_ylabel('y (m)', fontsize=12)
-            ax.set_zlabel('온도 T (℃)', fontsize=12)
-            ax.set_title('2D 열전도 방정식 - 3D 표면', fontsize=14, fontweight='bold')
+            ax.set_zlabel('Temperature T (℃)', fontsize=12)
+            ax.set_title('2D Heat Conduction - 3D Surface', fontsize=14, fontweight='bold')
             ax.set_zlim(self.T0, self.T_boundary)
-            time_text = ax.text2D(0.02, 0.95, f'시간 t = {frame * self.dt:.4f} s', 
+            time_text = ax.text2D(0.02, 0.95, f'Time t = {frame * self.dt:.4f} s', 
                                  transform=ax.transAxes, fontsize=12,
                                  bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
             return [surf]
@@ -184,7 +188,7 @@ if __name__ == "__main__":
     
     heat_2d = HeatConduction2D(
         Lx=1.0, Ly=1.0, T0=0.0, T_boundary=100.0,
-        alpha=0.01, nx=50, ny=50, nt=300, dt=dt
+        alpha=0.01, nx=50, ny=50, nt=2000, dt=dt
     )
     
     print("2D 열전도 - 컬러맵 애니메이션 생성 중...")
