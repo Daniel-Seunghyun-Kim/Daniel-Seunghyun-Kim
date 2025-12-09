@@ -12,6 +12,7 @@ from datetime import datetime
 from collections import defaultdict
 import argparse
 import sys
+import json
 
 
 class FileOrganizer:
@@ -35,7 +36,7 @@ class FileOrganizer:
     }
     
     def __init__(self, source_dir, target_dir=None, organize_by_date=True, 
-                 organize_by_type=True, dry_run=False):
+                 organize_by_type=True, dry_run=False, log_file=None):
         """
         Args:
             source_dir: 정리할 소스 디렉토리
@@ -43,6 +44,7 @@ class FileOrganizer:
             organize_by_date: 날짜별로 정리할지 여부
             organize_by_type: 파일 유형별로 정리할지 여부
             dry_run: 실제 이동 없이 시뮬레이션만 실행
+            log_file: 이동 이력을 저장할 로그 파일 경로 (None이면 자동 생성)
         """
         self.source_dir = Path(source_dir).expanduser().resolve()
         if target_dir:
@@ -59,6 +61,15 @@ class FileOrganizer:
         
         # 통계 정보
         self.stats = defaultdict(int)
+        
+        # 이동 이력 저장
+        if log_file:
+            self.log_file = Path(log_file).expanduser().resolve()
+        else:
+            # 기본 로그 파일 위치: 소스 디렉토리의 .file_organizer_history.json
+            self.log_file = self.source_dir / '.file_organizer_history.json'
+        
+        self.move_history = []
     
     def get_file_category(self, file_path):
         """파일 확장자를 기반으로 카테고리를 반환"""
@@ -140,9 +151,21 @@ class FileOrganizer:
         
         if not self.dry_run:
             try:
-                shutil.move(str(file_path), str(target_path))
+                # 원본 경로 저장 (복구용)
+                original_path = str(file_path)
+                target_path_str = str(target_path)
+                
+                shutil.move(original_path, target_path_str)
                 self.stats['이동됨'] += 1
                 print(f"✓ {file_path.name} → {target_path.relative_to(self.target_dir)}")
+                
+                # 이동 이력 기록
+                self.move_history.append({
+                    'original': original_path,
+                    'moved_to': target_path_str,
+                    'timestamp': datetime.now().isoformat(),
+                    'filename': file_path.name
+                })
             except Exception as e:
                 self.stats['오류'] += 1
                 print(f"✗ 오류: {file_path.name} - {e}")
@@ -204,13 +227,38 @@ class FileOrganizer:
         
         print()  # 진행률 출력 후 줄바꿈
         
+        # 이동 이력 저장
+        if not self.dry_run and self.move_history:
+            self._save_history()
+        
         # 통계 출력
         print(f"\n{'='*60}")
         print("정리 완료!")
         print(f"{'='*60}")
         for key, value in self.stats.items():
             print(f"{key}: {value}개")
+        if not self.dry_run and self.move_history:
+            print(f"이동 이력 저장: {self.log_file}")
         print(f"{'='*60}\n")
+    
+    def _save_history(self):
+        """이동 이력을 파일에 저장"""
+        try:
+            # 기존 이력이 있으면 불러오기
+            if self.log_file.exists():
+                with open(self.log_file, 'r', encoding='utf-8') as f:
+                    existing_history = json.load(f)
+            else:
+                existing_history = []
+            
+            # 새 이력 추가
+            existing_history.extend(self.move_history)
+            
+            # 저장
+            with open(self.log_file, 'w', encoding='utf-8') as f:
+                json.dump(existing_history, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"경고: 이동 이력 저장 실패 - {e}")
 
 
 def main():

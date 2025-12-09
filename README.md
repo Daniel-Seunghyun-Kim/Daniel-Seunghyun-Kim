@@ -98,11 +98,50 @@ python file_organizer.py . --no-recursive
         └── video.mp4
 ```
 
+## 복구 기능
+
+파일 정리 후 원래 위치로 되돌리고 싶다면 `file_restorer.py`를 사용하세요.
+
+### 복구 프로그램 사용법
+
+```bash
+# 이동 이력 목록 보기
+python3 file_restorer.py --list --auto ~/Downloads
+
+# 시뮬레이션으로 복구 확인
+python3 file_restorer.py --auto ~/Downloads --dry-run
+
+# 실제로 복구 실행
+python3 file_restorer.py --auto ~/Downloads
+
+# 특정 로그 파일 지정
+python3 file_restorer.py ~/Downloads/.file_organizer_history.json
+
+# 복구 후 이력 파일 삭제
+python3 file_restorer.py --auto ~/Downloads --clear
+```
+
+### 복구 프로그램 옵션
+
+- `--auto, -a`: 지정한 디렉토리에서 자동으로 로그 파일 찾기
+- `--list, -l`: 이동 이력 목록만 표시 (복구하지 않음)
+- `--dry-run`: 실제 복구 없이 시뮬레이션만 실행
+- `--clear`: 복구 후 이력 파일 삭제
+- `--no-reverse`: 이동 순서대로 복구 (기본값: 역순)
+
+### 이동 이력 저장 위치
+
+파일 정리 시 이동 이력이 다음 위치에 자동으로 저장됩니다:
+- `소스디렉토리/.file_organizer_history.json`
+
+이 파일을 삭제하면 복구가 불가능하므로 주의하세요.
+
 ## 주의사항
 
 - 프로그램 실행 전에 **반드시 `--dry-run` 옵션으로 먼저 확인**하세요
 - 중요한 파일이 있는 경우 백업을 권장합니다
 - 이미 정리된 폴더 구조 내의 파일은 건너뜁니다
+- 복구가 필요할 수 있으므로 `.file_organizer_history.json` 파일은 보관하세요
 
 ## 라이선스
 
