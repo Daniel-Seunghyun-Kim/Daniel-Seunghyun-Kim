@@ -8,3 +8,193 @@
 Daniel-Seunghyun-Kim/Daniel-Seunghyun-Kim is a ✨ special ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 You can click the Preview link to take a look at your changes.
 --->
+
+# 파일 자동 정리 프로그램
+
+컴퓨터 내부의 여러 파일들을 날짜와 자료 성격에 맞게 자동으로 정리해주는 프로그램입니다.
+
+## 주요 기능
+
+- 🧠 **파일 내용 기반 분류** (기본값): 파일 내용과 파일명을 분석하여 유사한 성격의 파일들을 자동으로 그룹화
+  - 텍스트 파일 내용 분석 (키워드 추출) - 가중치 70%
+  - 파일명 키워드 분석 - 가중치 30%
+  - 파일 간 유사도 계산 및 클러스터링
+  - 유사한 내용의 파일들을 같은 폴더로 자동 분류
+  - **확장자는 그룹화 기준에 포함되지 않음** (내용과 파일명만 사용)
+- 📅 **날짜별 정리**: 파일의 수정 날짜를 기준으로 `YYYY-MM` 형식의 폴더로 자동 분류
+- 🔗 **연관 파일 보존**: 같은 폴더에 있던 파일들을 함께 유지하여 프로젝트나 관련 파일들이 분리되지 않도록 보호
+- 📁 **유형별 정리** (선택사항): 파일 확장자를 기반으로 카테고리별 분류 (기본값: 비활성화)
+  - 문서 (PDF, Word, Excel, PowerPoint 등)
+  - 이미지 (JPG, PNG, GIF 등)
+  - 비디오 (MP4, AVI, MKV 등)
+  - 음악 (MP3, WAV, FLAC 등)
+  - 압축파일 (ZIP, RAR, 7Z 등)
+  - 프로그램 (EXE, MSI, DEB 등)
+  - 코드 (Python, JavaScript, HTML 등)
+  - 기타
+- 🔄 **중복 파일 처리**: 같은 이름의 파일이 있을 경우 자동으로 번호를 추가
+- 🛡️ **안전 모드**: 시뮬레이션 모드로 실제 이동 전에 미리 확인 가능
+- 📝 **이동 이력 기록**: 모든 파일 이동을 기록하여 필요시 원래 위치로 복구 가능
+
+## 설치 방법
+
+Python 3.6 이상이 필요합니다. 추가 패키지 설치가 필요하지 않습니다.
+
+```bash
+# 파일 실행 권한 부여 (선택사항)
+chmod +x file_organizer.py
+```
+
+## 사용 방법
+
+### 기본 사용법
+
+```bash
+# 현재 디렉토리 정리 (시뮬레이션 모드로 먼저 확인)
+python file_organizer.py . --dry-run
+
+# 실제로 정리 실행
+python file_organizer.py .
+
+# 특정 디렉토리 정리
+python file_organizer.py ~/Downloads
+
+# 다른 디렉토리로 정리된 파일 저장
+python file_organizer.py ~/Downloads -t ~/정리된파일
+```
+
+### 옵션
+
+- `--dry-run`: 실제 이동 없이 시뮬레이션만 실행 (안전하게 미리 확인)
+- `--no-date`: 날짜별 정리 비활성화
+- `--no-content`: 파일 내용 기반 분류 비활성화 (기본값: 활성화)
+- `--similarity`: 파일 유사도 임계값 설정 (0.0-1.0, 기본값: 0.3)
+  - 값이 낮을수록 더 많은 파일들이 같은 그룹에 묶임
+  - 값이 높을수록 더 엄격한 기준으로 그룹화
+- `--type`: 유형별 정리 활성화 (확장자 기반 분류, 기본값: 비활성화)
+- `--no-preserve`: 원본 폴더 구조 보존 비활성화 (기본값: 보존)
+- `--no-recursive`: 하위 디렉토리 검색 비활성화
+- `-t, --target-dir`: 정리된 파일을 저장할 타겟 디렉토리 지정
+
+### 사용 예시
+
+```bash
+# 기본 모드: 파일 내용 기반 분류 + 날짜별 정리 (권장)
+python file_organizer.py ~/Downloads
+
+# 유사도 임계값 조정 (더 엄격한 그룹화)
+python file_organizer.py ~/Downloads --similarity 0.5
+
+# 유사도 임계값 조정 (더 느슨한 그룹화)
+python file_organizer.py ~/Downloads --similarity 0.2
+
+# 내용 기반 분류 비활성화 (기존 방식)
+python file_organizer.py ~/Downloads --no-content
+
+# 확장자 기반 유형별 정리 활성화
+python file_organizer.py ~/Downloads --type
+
+# 날짜별 정리 없이 내용 기반 분류만
+python file_organizer.py ~/Downloads --no-date
+
+# 현재 디렉토리만 정리 (하위 디렉토리 제외)
+python file_organizer.py . --no-recursive
+```
+
+## 정리 결과 구조
+
+### 기본 모드 (파일 내용 기반 분류, 권장)
+
+파일 내용(70%)과 파일명(30%)을 분석하여 유사한 성격의 파일들이 같은 폴더로 그룹화됩니다:
+
+```
+정리된_디렉토리/
+├── 2024-01/
+│   ├── 보고서_프로젝트/          ← 내용이 유사한 파일들이 같은 폴더로
+│   │   ├── report.pdf
+│   │   ├── report_data.xlsx
+│   │   └── report_summary.txt
+│   ├── 이미지_사진/
+│   │   ├── photo1.jpg
+│   │   └── photo2.png
+│   └── 코드_프로그램/
+│       ├── main.py
+│       └── utils.js
+└── 2024-02/
+    └── 문서_문서/
+        └── document.pdf
+```
+
+**특징:**
+- 클러스터 이름은 파일 내용에서 추출한 키워드로 자동 생성
+- 확장자와 무관하게 내용이 유사하면 같은 폴더로 그룹화
+- 각 클러스터는 실제 디렉토리(폴더)로 생성되어 파일들이 이동됨
+
+### 유형별 정리 모드 (`--type` 옵션)
+
+확장자 기반으로 분류됩니다:
+
+```
+정리된_디렉토리/
+├── 문서/
+│   ├── 2024-01/
+│   │   ├── report.pdf
+│   │   └── presentation.pptx
+│   └── 2024-02/
+│       └── data.xlsx
+├── 이미지/
+│   └── 2024-01/
+│       └── photo.jpg
+└── 비디오/
+    └── 2024-01/
+        └── video.mp4
+```
+
+## 복구 기능
+
+파일 정리 후 원래 위치로 되돌리고 싶다면 `file_restorer.py`를 사용하세요.
+
+### 복구 프로그램 사용법
+
+```bash
+# 이동 이력 목록 보기
+python3 file_restorer.py --list --auto ~/Downloads
+
+# 시뮬레이션으로 복구 확인
+python3 file_restorer.py --auto ~/Downloads --dry-run
+
+# 실제로 복구 실행
+python3 file_restorer.py --auto ~/Downloads
+
+# 특정 로그 파일 지정
+python3 file_restorer.py ~/Downloads/.file_organizer_history.json
+
+# 복구 후 이력 파일 삭제
+python3 file_restorer.py --auto ~/Downloads --clear
+```
+
+### 복구 프로그램 옵션
+
+- `--auto, -a`: 지정한 디렉토리에서 자동으로 로그 파일 찾기
+- `--list, -l`: 이동 이력 목록만 표시 (복구하지 않음)
+- `--dry-run`: 실제 복구 없이 시뮬레이션만 실행
+- `--clear`: 복구 후 이력 파일 삭제
+- `--no-reverse`: 이동 순서대로 복구 (기본값: 역순)
+
+### 이동 이력 저장 위치
+
+파일 정리 시 이동 이력이 다음 위치에 자동으로 저장됩니다:
+- `소스디렉토리/.file_organizer_history.json`
+
+이 파일을 삭제하면 복구가 불가능하므로 주의하세요.
+
+## 주의사항
+
+- 프로그램 실행 전에 **반드시 `--dry-run` 옵션으로 먼저 확인**하세요
+- 중요한 파일이 있는 경우 백업을 권장합니다
+- 이미 정리된 폴더 구조 내의 파일은 건너뜁니다
+- 복구가 필요할 수 있으므로 `.file_organizer_history.json` 파일은 보관하세요
+
+## 라이선스
+
+이 프로젝트는 개인 사용 목적으로 제작되었습니다.
