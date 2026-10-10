@@ -641,3 +641,7 @@ README.md: ✓ (모든 폴더)
 
 **이제 데이터 수집만 하면 논문이 자동으로 만들어집니다.**
 
+## 🔗 지식 연결 (Knowledge Mesh)
+- **Parent Hub**: [[00_AlN_Research_Hub_Master_Index]]
+- **Related Master Plan**: [[통합_연구_마스터플랜_멀티스케일_반도체_열관리]]
+- **Master Index**: [[Index]]

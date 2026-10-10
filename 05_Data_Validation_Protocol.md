@@ -557,3 +557,8 @@ if __name__ == '__main__':
 **상태**: ✅ 프로토콜 완성 (실행 대기)
 
 **다음 세션**: 사용자 데이터 업로드 → validate 스크립트 실행 → 결과 검증
+
+## 🔗 지식 연결 (Knowledge Mesh)
+- **Parent Hub**: [[00_AlN_Research_Hub_Master_Index]]
+- **Related Master Plan**: [[통합_연구_마스터플랜_멀티스케일_반도체_열관리]]
+- **Master Index**: [[Index]]

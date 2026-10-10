@@ -501,3 +501,8 @@ LOPO 교차검증 (92행 데이터셋):
 - tool_connectors.py 완전 구현
 - 첫 번째 자동 파이프라인 테스트
 - 웹 API 프로토타입
+
+## 🔗 지식 연결 (Knowledge Mesh)
+- **Parent Hub**: [[00_AlN_Research_Hub_Master_Index]]
+- **Related Master Plan**: [[통합_연구_마스터플랜_멀티스케일_반도체_열관리]]
+- **Master Index**: [[Index]]

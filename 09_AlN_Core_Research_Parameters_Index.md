@@ -386,3 +386,8 @@ AlN_Core의 추가 가치:
 **상태**: ✅ 인덱싱 완료, 세부 검증 대기
 
 **참고**: 이 인덱스는 알려진 데이터만 포함합니다. 원문의 정확한 데이터 추출은 추후 단계입니다.
+
+## 🔗 지식 연결 (Knowledge Mesh)
+- **Parent Hub**: [[00_AlN_Research_Hub_Master_Index]]
+- **Related Master Plan**: [[통합_연구_마스터플랜_멀티스케일_반도체_열관리]]
+- **Master Index**: [[Index]]

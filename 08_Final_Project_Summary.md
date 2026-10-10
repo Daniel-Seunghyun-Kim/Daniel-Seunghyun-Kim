@@ -457,3 +457,8 @@ Phase 10.0 (사용자 데이터 입수 후):
 **생성일**: 2026-10-05  
 **문서 패키지**: D:\PS\PreviousTheme\ (9개 마크다운 + 이 문서)  
 **상태**: ✅ 완성 및 검증 완료
+
+## 🔗 지식 연결 (Knowledge Mesh)
+- **Parent Hub**: [[00_AlN_Research_Hub_Master_Index]]
+- **Related Master Plan**: [[통합_연구_마스터플랜_멀티스케일_반도체_열관리]]
+- **Master Index**: [[Index]]

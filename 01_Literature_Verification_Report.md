@@ -418,3 +418,8 @@ ACS Applied Materials & Interfaces, 16, 53098–53105.
 **생성일**: 2026-10-05  
 **기반**: LITERATURE_METADATA.csv + PDF 확인  
 **상태**: ✅ 검증 완료 (Hwang 2차 검증 포함)
+
+## 🔗 지식 연결 (Knowledge Mesh)
+- **Parent Hub**: [[00_AlN_Research_Hub_Master_Index]]
+- **Related Master Plan**: [[통합_연구_마스터플랜_멀티스케일_반도체_열관리]]
+- **Master Index**: [[Index]]

@@ -319,3 +319,8 @@ texture_100nm_tbc200,80,100,TRUE,200,14.29,0.04,14.25,2.0e6,1.25e-9,7.14e-4,7.14
 **상태**: ✅ 검증 완료 (2026-06-12)
 
 **참고**: 03_Simulation_Results_Analysis.md에서 시뮬레이션 방법론 상세 참조
+
+## 🔗 지식 연결 (Knowledge Mesh)
+- **Parent Hub**: [[00_AlN_Research_Hub_Master_Index]]
+- **Related Master Plan**: [[통합_연구_마스터플랜_멀티스케일_반도체_열관리]]
+- **Master Index**: [[Index]]

@@ -400,3 +400,8 @@ print(f"LOPO Accuracy: {accuracy:.3f}")  # 0.543
 **검증**: ✅ 완료 (2026-06-12)
 
 **다음**: 05_Data_Validation_Protocol.md에서 새로운 데이터 검증 프로토콜 참조
+
+## 🔗 지식 연결 (Knowledge Mesh)
+- **Parent Hub**: [[00_AlN_Research_Hub_Master_Index]]
+- **Related Master Plan**: [[통합_연구_마스터플랜_멀티스케일_반도체_열관리]]
+- **Master Index**: [[Index]]

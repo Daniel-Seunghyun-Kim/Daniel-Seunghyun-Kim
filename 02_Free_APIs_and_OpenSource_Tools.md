@@ -628,3 +628,7 @@ python 02_Literature_Search_Automation.py
 
 **다음 주: PC1에서 FEniCS + OpenFOAM 설치하세요.**
 
+## 🔗 지식 연결 (Knowledge Mesh)
+- **Parent Hub**: [[00_AlN_Research_Hub_Master_Index]]
+- **Related Master Plan**: [[통합_연구_마스터플랜_멀티스케일_반도체_열관리]]
+- **Master Index**: [[Index]]

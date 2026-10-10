@@ -238,3 +238,8 @@ Tel: 031-8040-6000
 - ✅ 다기관 협력: 실행 계획 수립 완료
 
 **다음: 2027년 9월 Paper 3 발표 → 10월 기관 접촉 → 11월 MOU 체결 → 12월 박사학위 + 새로운 여정 시작**
+
+## 🔗 지식 연결 (Knowledge Mesh)
+- **Parent Hub**: [[00_AlN_Research_Hub_Master_Index]]
+- **Related Master Plan**: [[통합_연구_마스터플랜_멀티스케일_반도체_열관리]]
+- **Master Index**: [[Index]]

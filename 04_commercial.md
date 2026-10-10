@@ -1,0 +1,31 @@
+# Korea commercial thermal measurement leads: AlN/Si buried interface
+
+> Follow-up correction: KETI's official 2023 reply explicitly states no TDTR instrument; the 2025 review-pending reply does not establish acquisition. Treat KETI as downgraded/unverified, not a priority confirmed-method provider. See 17_PERPLEXITY_AND_CORRECTIONS.md and RESULTS_NANOMETER_V2.md.
+
+Research scope: commercially bookable Korean TDTR or 3ω measurement for an AlN film on Si with a buried AlN/Si thermal boundary resistance (TBR). The Si backside has no metal; a top transducer is provisionally acceptable. Public primary sources only; no provider contacted. Execution correction: seven query strings were used, exceeding the planned five-query cap. Status labels below mean what the cited public page establishes, not a quote or acceptance decision.
+
+## Best leads
+
+| Provider | Publicly confirmed | Fit to this specimen / unknowns |
+|---|---|---|
+| **NETZSCH Analyzing & Testing, Korea (Goyang)** | NETZSCH publicly offers contract TDTR; lists thermoreflectance outputs as thermal diffusivity/effusivity and **interfacial resistance**, RT–500 °C, films 100 nm–20 µm on substrate with mirror-polished surface roughness <5 nm. The same contract-testing page lists a Korea (Goyang) applications lab. [Contract testing / technique scope](https://analyzing-testing.netzsch.com/en-US/services/contract-testing) | **Strongest exact-method lead; Korean execution unconfirmed.** The source does not map TDTR availability to Goyang, nor affirm AlN/Si, whether their reported resistance can isolate the buried AlN/Si interface in this stack, required top transducer (or whether NETZSCH deposits one), backside-metal need, sample dimensions, quote, or turnaround. Ask whether Goyang itself runs TDTR and accepts an as-grown AlN/Si wafer with a lab-applied top transducer, then confirm model fit for buried TBR. |
+| **KETI Reliability Research Center, Seongnam** | KETI’s official Q&A has a May 1, 2025 TDTR analysis inquiry specifically asking about dielectric films ≤1 µm on 525 µm Si wafers; the posted response says test staff would review and reply by email, giving Lee Gyu-seok, 031-789-7293, gslee@keti.re.kr. Center contact listing also gives fault-analysis contact Han Song-hee, 031-789-7294, hsh@keti.re.kr. [TDTR inquiry and reply](https://www.keti.re.kr/reliability/sub/qna.php?at=view&idx=147304) | **Capability still unknown.** This proves a relevant inquiry was received, not that KETI has accepted or performed the measurement. No public method specification, acceptance, transducer preparation, TBR deliverable, or price found. The asked geometry is notably close to the stated Si wafer/film thickness; contact only if user chooses. |
+| **LINSEIS / NI International Trading Limited, Seoul** | LINSEIS explicitly markets South Korea contract measurements and its South Korea lab page says samples can be submitted. Listed Korean offerings include THB thermal conductivity (RT–150 °C), plus that page lists shipment to NI International Trading in Seoul and an individual quote process. [South Korea lab](https://www.linseis.com/en/service-lab/material-testing-lab-south-korea/) · [global contract testing menu](https://www.linseis.com/en/service-lab/) | **Commercial thermal testing confirmed, but not the target method.** Korea page does not list TDTR or 3ω; THB is not evidence of nanofilm buried-interface TBR capability. Do not treat its LFA/TIM/3ω product pages as proof those methods are offered at Seoul. No exact AlN/Si fit, top transducer or backside metal guidance, costs for the target, or acceptance established. |
+
+## Other public signals and exclusions
+
+- **IBS Center for Integrated Nanostructure Physics / Sungkyunkwan University, Suwon:** official equipment page lists a TDTR system for thin-film thermal properties and an inquiry contact (Kyung-Hun Ko, 010-5334-8658, dmdhdhdn@naver.com). It does not state commercial contract service or sample acceptance, so treat as a research-instrument lead, not a confirmed commercial provider. [Equipment listing](https://rna.ibs.re.kr/_prog/equipments/index.php?GotoPage=6&menu_dvs_cd=050107&mng_no=1356&mode=V&site_dvs_cd=cinap_en)
+- **Roientec / Microsanj POSH-TDTR:** Korean seller page markets a TDTR instrument and its thin-film/multilayer uses; it supports equipment availability/sales, not a measurement service. No public test-service offer was established. [Product page](https://www.roientec.co.kr/266/?bmode=view&idx=168582308&q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIn0%3D&t=board)
+- **Korea Carbon Industry Promotion Agency:** official equipment page lists Hot Disk TPS-2500S and thin-film module for 20–500 µm films. This is distinct from TDTR/3ω and the stated thickness range does not establish suitability for a submicron AlN layer or buried-interface TBR. [Equipment support listing](https://www.kcarbon.or.kr/web/page.php?machine_id=126&page=2&pcode=HC03&s_mbcate_id=2)
+- **Laser flash analysis (LFA) and thermal imaging:** these are not substitutes for the requested buried-interface measurement. NETZSCH’s page separately lists LFA as diffusivity/conductivity testing and TDTR as the technique that can return interfacial resistance. No Korea-specific commercial thermal-imaging service relevant to this AlN/Si interface was confirmed in the searches.
+
+## Bottom line for the specimen
+
+A top transducer is provisionally allowed and the lack of backside metal is not publicly identified as a blocker for TDTR. However, the sources do **not** establish that any Korean lab will accept the exact AlN/Si sample or independently extract its buried interface resistance. NETZSCH is the clearest method-and-contract lead, while KETI is a direct Korean thin-film-on-Si inquiry lead whose actual capability remains unverified. LINSEIS provides confirmed Korean contract thermal testing, but its public Seoul menu does not establish TDTR/3ω.
+
+No provider was contacted. No availability, price, turnaround, sample acceptance, or technical fit beyond the cited public claims is represented as confirmed.
+
+## 🔗 지식 연결 (Knowledge Mesh)
+- **Parent Hub**: [[00_AlN_Research_Hub_Master_Index]]
+- **Related Master Plan**: [[통합_연구_마스터플랜_멀티스케일_반도체_열관리]]
+- **Master Index**: [[Index]]

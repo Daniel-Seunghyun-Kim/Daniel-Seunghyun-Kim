@@ -737,3 +737,7 @@ D. "모두 해보자" → 최강 (순차형 복합)
 2. 수익화 경로 ✅ (완료)
 3. → **다기관 협력 & 창업 경로** (최종)
 
+## 🔗 지식 연결 (Knowledge Mesh)
+- **Parent Hub**: [[00_AlN_Research_Hub_Master_Index]]
+- **Related Master Plan**: [[통합_연구_마스터플랜_멀티스케일_반도체_열관리]]
+- **Master Index**: [[Index]]
